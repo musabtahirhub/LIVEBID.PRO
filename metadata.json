@@ -1,0 +1,5 @@
+{
+  "name": "Game Theory: Auction House Simulator",
+  "description": "An advanced economic simulation exploring English vs. Vickrey (Second-Price) auctions through AI-driven agents and batch simulations to demonstrate Strategy-Proofness and Nash Equilibrium.",
+  "requestFramePermissions": []
+}
