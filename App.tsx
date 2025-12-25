@@ -121,7 +121,7 @@ const App: React.FC = () => {
     setLogs([]);
     addLog("Initializing Monte Carlo simulation...");
     
-    const iterations = 1000;
+    const iterations = 250;
     const results = [];
     let wins = 0;
     let totalWinPrice = 0;

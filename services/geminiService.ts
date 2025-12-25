@@ -14,7 +14,7 @@ export const getTrendingAuctions = async (): Promise<{ auctions: RealAuction[], 
   
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: "List 6 high-profile, currently active real-world auctions (Art, Classic Cars, or Collectibles). Provide the item name, estimated market value in USD, the auction house, and the direct URL. Focus on items ending soon.",
+    contents: "List 3 high-profile, currently active real-world auctions (Art, Classic Cars, or Collectibles). Provide the item name, estimated market value in USD, the auction house, and the direct URL. Focus on items ending soon.",
     config: {
       tools: [{ googleSearch: {} }],
       responseMimeType: "application/json",
@@ -63,7 +63,7 @@ export const getBiddingStrategy = async (
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
+    model: 'gemini-3-flash-preview',
     contents: `
       Task: Act as a Senior Bidding Strategist for high-stakes auctions.
       Analyze this specific live auction opportunity: "${itemName}"
