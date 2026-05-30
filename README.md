@@ -1,49 +1,116 @@
-# Game Theory: Auction House Simulator
+# LiveBid.Pro — Full-Stack Auction Intelligence Platform
 
-An advanced economic simulation exploring English vs. Vickrey (Second-Price) auctions through AI-driven agents and batch simulations to demonstrate Strategy-Proofness and Nash Equilibrium.
+> AI-powered auction bidding platform with Monte Carlo simulations, real-time market intelligence, game theory analysis, and a secure backend.
 
-## Features
+## Architecture
 
-- **Global Auction Feeds:** Uses the Gemini AI to ground simulated auctions in real-time or historically accurate market listings.
-- **Monte Carlo Simulations:** Run batch simulations with randomized initial parameters to evaluate expected win probabilities and profitability across hundreds of scenarios.
-- **AI-Powered Strategist:** Receive dynamic, generative AI bidding strategies and reports to navigate complex markets against synthetic competitors.
-- **Agent Intel:** Profile competing bidders based on their calculated true values, risk aversion levels, and behavioral traits.
-- **Auction Typologies:** Learn and experiment with different auction formats (English vs. Vickrey), exploring key microeconomic concepts like the Winner's Curse, dominant strategies, and revenue equivalence.
+```
+┌─────────────────────────────────┐
+│         React Frontend          │
+│   (Vite + React Router + CSS)   │
+│         Port 5173 (dev)         │
+├─────────────────────────────────┤
+│           /api proxy            │
+├─────────────────────────────────┤
+│       Express.js Backend        │
+│  (REST API + WebSocket + JWT)   │
+│         Port 3001               │
+├─────────────────────────────────┤
+│          SQLite (WAL)           │
+│   Users, Auctions, Bids, Sims  │
+└─────────────────────────────────┘
+```
 
-## Technologies Used
+## Tech Stack
 
-- **Framework:** React + Vite
-- **Styling:** Tailwind CSS
-- **Data Visualization:** Recharts
-- **Icons:** Lucide React
-- **AI Integration:** `@google/genai` (Google Gemini API)
+| Layer      | Technology                            |
+|------------|---------------------------------------|
+| Frontend   | React 18, Vite, React Router, Recharts |
+| Styling    | Vanilla CSS Design System             |
+| Backend    | Node.js, Express, TypeScript          |
+| Database   | SQLite via better-sqlite3             |
+| Auth       | JWT + bcrypt                          |
+| AI         | Google Gemini (server-side only)      |
+| Real-time  | WebSocket (ws)                        |
+| DevOps     | Docker, npm Workspaces                |
 
 ## Getting Started
 
-1. Set up your environment variables:
-   Ensure you have a `.env` file containing your valid `GEMINI_API_KEY`.
+### Prerequisites
+- Node.js 18+
+- npm 9+
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+### 1. Clone & Configure
 
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
+```bash
+git clone https://github.com/your-repo/LIVEBID.PRO.git
+cd LIVEBID.PRO
+cp .env.example .env
+# Edit .env with your GEMINI_API_KEY and JWT_SECRET
+```
 
-4. Build for production:
-   ```bash
-   npm run build
-   ```
+### 2. Install Dependencies
 
-## Educational Concepts Explored
+```bash
+npm install
+```
 
-- **Vickrey Auction (Second-Price Sealed-Bid):** Bidders submit written bids without knowing the bid of the other people in the auction. The highest bidder wins but pays the price submitted by the second-highest bidder. 
-- **English Auction:** The most common form of auction. The auctioneer starts at a reserve price and participants bid progressively higher until no one is willing to offer more.
-- **Nash Equilibrium:** A situation where no player can benefit by changing their strategy while the other players keep theirs unchanged.
-- **Strategy-Proofness:** An environment where a participant's dominant strategy is to reveal their true, underlying preferences.
+### 3. Run Development
+
+```bash
+npm run dev
+```
+
+This starts both:
+- **Client**: http://localhost:5173
+- **Server**: http://localhost:3001
+
+### 4. Build for Production
+
+```bash
+npm run build
+npm start
+```
+
+### 5. Docker Deployment
+
+```bash
+docker-compose up --build -d
+```
+
+## API Endpoints
+
+| Method | Endpoint               | Auth     | Description                 |
+|--------|------------------------|----------|-----------------------------|
+| POST   | /api/auth/register     | No       | Create account              |
+| POST   | /api/auth/login        | No       | Authenticate                |
+| GET    | /api/auth/me           | Required | Get current user + stats    |
+| POST   | /api/simulate          | Optional | Run Monte Carlo simulation  |
+| GET    | /api/simulate/history  | Optional | Get simulation history      |
+| POST   | /api/ai/feed           | Optional | AI-generated auction feed   |
+| POST   | /api/ai/strategy       | Optional | AI bidding strategy         |
+| GET    | /api/auctions          | Optional | List auctions               |
+| POST   | /api/auctions          | Required | Create auction              |
+| POST   | /api/auctions/:id/bid  | Required | Place bid (WebSocket broadcast) |
+| GET    | /api/health            | No       | Server health check         |
+
+## Features
+
+- **War Room**: Monte Carlo simulation with convergence analysis and profitability frontier charts
+- **Global Feed**: AI-powered auction discovery from Sotheby's, Christie's, Phillips
+- **Agent Intel**: AI bidder profiles with behavioral scatter analysis
+- **Theory Lab**: Interactive Nash Equilibrium and Vickrey auction visualizations
+- **Dashboard**: Persistent simulation history and operator stats
+- **Auth**: JWT registration/login with bcrypt password hashing
+- **Real-time**: WebSocket broadcasts for live bid updates
+- **Security**: Gemini API key server-side only, rate limiting, Helmet headers
+
+## Educational Concepts
+
+- **Vickrey Auction (Second-Price Sealed-Bid)**: Bidders submit bids without seeing others. Highest bidder wins but pays second-highest price.
+- **English Auction**: Progressive ascending bids until no one offers more.
+- **Nash Equilibrium**: No player benefits by unilaterally changing strategy.
+- **Strategy-Proofness**: Dominant strategy is to reveal true preferences.
 
 ## License
 

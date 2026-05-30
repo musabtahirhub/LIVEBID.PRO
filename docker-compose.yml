@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  livebid:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_PATH=/app/data/livebid.db
+    volumes:
+      - livebid-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  livebid-data:
