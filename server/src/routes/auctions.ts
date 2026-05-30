@@ -9,15 +9,15 @@ const router = Router();
  * GET /api/auctions
  * List auctions with optional status filter
  */
-router.get('/', optionalAuth, (req: Request, res: Response): void => {
+router.get('/', optionalAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     const { status, limit = '50', offset = '0' } = req.query;
 
     let auctions;
     if (status === 'active') {
-      auctions = AuctionModel.findActive();
+      auctions = await AuctionModel.findActive();
     } else {
-      auctions = AuctionModel.findAll(Number(limit), Number(offset));
+      auctions = await AuctionModel.findAll(Number(limit), Number(offset));
     }
 
     res.json({ auctions, total: auctions.length });
@@ -31,16 +31,16 @@ router.get('/', optionalAuth, (req: Request, res: Response): void => {
  * GET /api/auctions/:id
  * Get auction details with bids
  */
-router.get('/:id', optionalAuth, (req: Request, res: Response): void => {
+router.get('/:id', optionalAuth, async (req: Request, res: Response): Promise<void> => {
   try {
-    const auction = AuctionModel.findById(Number(req.params.id));
+    const auction = await AuctionModel.findById(Number(req.params.id));
     if (!auction) {
       res.status(404).json({ error: 'Auction not found' });
       return;
     }
 
-    const bids = AuctionModel.getBids(auction.id);
-    const highestBid = AuctionModel.getHighestBid(auction.id);
+    const bids = await AuctionModel.getBids(auction.id);
+    const highestBid = await AuctionModel.getHighestBid(auction.id);
 
     res.json({
       auction,
@@ -58,7 +58,7 @@ router.get('/:id', optionalAuth, (req: Request, res: Response): void => {
  * POST /api/auctions
  * Create a new auction (authenticated)
  */
-router.post('/', authMiddleware, (req: Request, res: Response): void => {
+router.post('/', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, description, market_value, auction_type, house, url } = req.body;
 
@@ -67,7 +67,7 @@ router.post('/', authMiddleware, (req: Request, res: Response): void => {
       return;
     }
 
-    const auction = AuctionModel.create({
+    const auction = await AuctionModel.create({
       name,
       description,
       market_value: Number(market_value),
@@ -90,7 +90,7 @@ router.post('/', authMiddleware, (req: Request, res: Response): void => {
  * POST /api/auctions/:id/bid
  * Place a bid on an auction (authenticated)
  */
-router.post('/:id/bid', authMiddleware, (req: Request, res: Response): void => {
+router.post('/:id/bid', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const auctionId = Number(req.params.id);
     const { amount } = req.body;
@@ -100,7 +100,7 @@ router.post('/:id/bid', authMiddleware, (req: Request, res: Response): void => {
       return;
     }
 
-    const auction = AuctionModel.findById(auctionId);
+    const auction = await AuctionModel.findById(auctionId);
     if (!auction) {
       res.status(404).json({ error: 'Auction not found' });
       return;
@@ -112,7 +112,7 @@ router.post('/:id/bid', authMiddleware, (req: Request, res: Response): void => {
     }
 
     // Check bid is higher than current highest
-    const highestBid = AuctionModel.getHighestBid(auctionId);
+    const highestBid = await AuctionModel.getHighestBid(auctionId);
     if (highestBid && amount <= highestBid.amount) {
       res.status(400).json({
         error: `Bid must be higher than current highest: $${highestBid.amount}`,
@@ -120,7 +120,7 @@ router.post('/:id/bid', authMiddleware, (req: Request, res: Response): void => {
       return;
     }
 
-    const bid = AuctionModel.placeBid(auctionId, req.user!.userId, Number(amount));
+    const bid = await AuctionModel.placeBid(auctionId, req.user!.userId, Number(amount));
 
     // Broadcast to all connected clients
     broadcastBid(auctionId, req.user!.userId, req.user!.username, Number(amount));
@@ -136,9 +136,9 @@ router.post('/:id/bid', authMiddleware, (req: Request, res: Response): void => {
  * PATCH /api/auctions/:id/close
  * Close an auction (creator only)
  */
-router.patch('/:id/close', authMiddleware, (req: Request, res: Response): void => {
+router.patch('/:id/close', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
-    const auction = AuctionModel.findById(Number(req.params.id));
+    const auction = await AuctionModel.findById(Number(req.params.id));
     if (!auction) {
       res.status(404).json({ error: 'Auction not found' });
       return;
@@ -149,7 +149,7 @@ router.patch('/:id/close', authMiddleware, (req: Request, res: Response): void =
       return;
     }
 
-    AuctionModel.updateStatus(auction.id, 'closed');
+    await AuctionModel.updateStatus(auction.id, 'closed');
     broadcastAuctionUpdate(auction.id, 'closed');
 
     res.json({ message: 'Auction closed', auctionId: auction.id });

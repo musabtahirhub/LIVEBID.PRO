@@ -9,7 +9,7 @@ const router = Router();
  * POST /api/simulate
  * Run a Monte Carlo auction simulation
  */
-router.post('/', optionalAuth, (req: Request, res: Response): void => {
+router.post('/', optionalAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     const {
       itemName = 'Unknown Asset',
@@ -40,7 +40,7 @@ router.post('/', optionalAuth, (req: Request, res: Response): void => {
 
     // Persist if authenticated
     if (req.user) {
-      SimulationModel.create({
+      await SimulationModel.create({
         user_id: req.user.userId,
         auction_name: itemName,
         market_value: Number(marketValue),
@@ -68,15 +68,15 @@ router.post('/', optionalAuth, (req: Request, res: Response): void => {
  * GET /api/simulate/history
  * Get simulation history for authenticated user
  */
-router.get('/history', optionalAuth, (req: Request, res: Response): void => {
+router.get('/history', optionalAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) {
       res.json({ history: [], message: 'Login to save simulation history' });
       return;
     }
 
-    const history = SimulationModel.findByUser(req.user.userId);
-    const stats = SimulationModel.getStats(req.user.userId);
+    const history = await SimulationModel.findByUser(req.user.userId);
+    const stats = await SimulationModel.getStats(req.user.userId);
 
     res.json({ history, stats });
   } catch (error) {

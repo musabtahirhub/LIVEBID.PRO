@@ -13,6 +13,7 @@ import WarRoom from './pages/WarRoom';
 import GlobalFeed from './pages/GlobalFeed';
 import AgentIntel from './pages/AgentIntel';
 import TheoryLab from './pages/TheoryLab';
+import History from './pages/History';
 
 /**
  * Main terminal layout with header, tab content, and footer.
@@ -32,6 +33,7 @@ const TerminalLayout: React.FC = () => {
         {activeTab === 'GLOBAL_FEED' && <GlobalFeed />}
         {activeTab === 'AGENT_INTEL' && <AgentIntel />}
         {activeTab === 'THEORY_LAB' && <TheoryLab />}
+        {activeTab === 'HISTORY' && <History />}
       </main>
 
       <Footer />

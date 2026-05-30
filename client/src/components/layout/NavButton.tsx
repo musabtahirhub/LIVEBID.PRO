@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Newspaper, Users, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, Newspaper, Users, GraduationCap, Clock } from 'lucide-react';
 import type { Tab } from '../../types';
 
 interface NavButtonProps {
@@ -14,6 +14,7 @@ const iconMap: Record<Tab, React.ReactNode> = {
   GLOBAL_FEED: <Newspaper style={{ width: '1rem', height: '1rem' }} />,
   AGENT_INTEL: <Users style={{ width: '1rem', height: '1rem' }} />,
   THEORY_LAB: <GraduationCap style={{ width: '1rem', height: '1rem' }} />,
+  HISTORY: <Clock style={{ width: '1rem', height: '1rem' }} />,
 };
 
 const NavButton: React.FC<NavButtonProps> = ({ active, onClick, label, tabId }) => (

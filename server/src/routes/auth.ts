@@ -33,19 +33,19 @@ router.post('/register', authLimiter, async (req: Request, res: Response): Promi
     }
 
     // Check existing
-    if (UserModel.findByEmail(email)) {
+    if (await UserModel.findByEmail(email)) {
       res.status(409).json({ error: 'Email already registered' });
       return;
     }
 
-    if (UserModel.findByUsername(username)) {
+    if (await UserModel.findByUsername(username)) {
       res.status(409).json({ error: 'Username already taken' });
       return;
     }
 
     // Hash password and create
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = UserModel.create(email, username, passwordHash);
+    const user = await UserModel.create(email, username, passwordHash);
 
     const token = generateToken({
       userId: user.id,
@@ -76,7 +76,7 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
       return;
     }
 
-    const user = UserModel.findByEmail(email);
+    const user = await UserModel.findByEmail(email);
     if (!user) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
@@ -108,15 +108,15 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
  * GET /api/auth/me
  * Get current authenticated user
  */
-router.get('/me', authMiddleware, (req: Request, res: Response): void => {
+router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = UserModel.findById(req.user!.userId);
+    const user = await UserModel.findById(req.user!.userId);
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    const stats = SimulationModel.getStats(user.id);
+    const stats = await SimulationModel.getStats(user.id);
 
     res.json({
       user: UserModel.toPublic(user),

@@ -1,4 +1,4 @@
-import { getDb } from '../database.js';
+import { getPool } from '../database.js';
 
 export interface Auction {
   id: number;
@@ -22,27 +22,45 @@ export interface Bid {
   created_at: string;
 }
 
+export interface UserBidWithAuction extends Bid {
+  auction_name: string;
+  auction_status: string;
+}
+
 export const AuctionModel = {
-  findAll(limit = 50, offset = 0): Auction[] {
-    const db = getDb();
-    return db.prepare(
-      'SELECT * FROM auctions ORDER BY created_at DESC LIMIT ? OFFSET ?'
-    ).all(limit, offset) as Auction[];
+  async findAll(limit = 50, offset = 0): Promise<Auction[]> {
+    const pool = getPool();
+    const result = await pool.query(
+      'SELECT * FROM auctions ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+      [limit, offset]
+    );
+    return result.rows as Auction[];
   },
 
-  findActive(): Auction[] {
-    const db = getDb();
-    return db.prepare(
+  async findActive(): Promise<Auction[]> {
+    const pool = getPool();
+    const result = await pool.query(
       "SELECT * FROM auctions WHERE status = 'active' ORDER BY created_at DESC"
-    ).all() as Auction[];
+    );
+    return result.rows as Auction[];
   },
 
-  findById(id: number): Auction | undefined {
-    const db = getDb();
-    return db.prepare('SELECT * FROM auctions WHERE id = ?').get(id) as Auction | undefined;
+  async findById(id: number): Promise<Auction | undefined> {
+    const pool = getPool();
+    const result = await pool.query('SELECT * FROM auctions WHERE id = $1', [id]);
+    return result.rows[0] as Auction | undefined;
   },
 
-  create(data: {
+  async findByUser(userId: number, limit = 50): Promise<Auction[]> {
+    const pool = getPool();
+    const result = await pool.query(
+      'SELECT * FROM auctions WHERE creator_id = $1 ORDER BY created_at DESC LIMIT $2',
+      [userId, limit]
+    );
+    return result.rows as Auction[];
+  },
+
+  async create(data: {
     name: string;
     description?: string;
     market_value: number;
@@ -50,51 +68,70 @@ export const AuctionModel = {
     house?: string;
     url?: string;
     creator_id?: number;
-  }): Auction {
-    const db = getDb();
-    const result = db.prepare(
+  }): Promise<Auction> {
+    const pool = getPool();
+    const result = await pool.query(
       `INSERT INTO auctions (name, description, market_value, auction_type, house, url, creator_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      data.name,
-      data.description || null,
-      data.market_value,
-      data.auction_type || 'ENGLISH',
-      data.house || null,
-      data.url || null,
-      data.creator_id || null
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [
+        data.name,
+        data.description || null,
+        data.market_value,
+        data.auction_type || 'ENGLISH',
+        data.house || null,
+        data.url || null,
+        data.creator_id || null,
+      ]
     );
-
-    return this.findById(Number(result.lastInsertRowid))!;
+    return result.rows[0] as Auction;
   },
 
-  updateStatus(id: number, status: string): void {
-    const db = getDb();
-    db.prepare('UPDATE auctions SET status = ?, closed_at = CURRENT_TIMESTAMP WHERE id = ?')
-      .run(status, id);
+  async updateStatus(id: number, status: string): Promise<void> {
+    const pool = getPool();
+    await pool.query(
+      'UPDATE auctions SET status = $1, closed_at = NOW() WHERE id = $2',
+      [status, id]
+    );
   },
 
-  getBids(auctionId: number): Bid[] {
-    const db = getDb();
-    return db.prepare(
-      'SELECT * FROM bids WHERE auction_id = ? ORDER BY amount DESC'
-    ).all(auctionId) as Bid[];
+  async getBids(auctionId: number): Promise<Bid[]> {
+    const pool = getPool();
+    const result = await pool.query(
+      'SELECT * FROM bids WHERE auction_id = $1 ORDER BY amount DESC',
+      [auctionId]
+    );
+    return result.rows as Bid[];
   },
 
-  getHighestBid(auctionId: number): Bid | undefined {
-    const db = getDb();
-    return db.prepare(
-      'SELECT * FROM bids WHERE auction_id = ? ORDER BY amount DESC LIMIT 1'
-    ).get(auctionId) as Bid | undefined;
+  async getHighestBid(auctionId: number): Promise<Bid | undefined> {
+    const pool = getPool();
+    const result = await pool.query(
+      'SELECT * FROM bids WHERE auction_id = $1 ORDER BY amount DESC LIMIT 1',
+      [auctionId]
+    );
+    return result.rows[0] as Bid | undefined;
   },
 
-  placeBid(auctionId: number, userId: number, amount: number): Bid {
-    const db = getDb();
-    const result = db.prepare(
-      'INSERT INTO bids (auction_id, user_id, amount) VALUES (?, ?, ?)'
-    ).run(auctionId, userId, amount);
+  async placeBid(auctionId: number, userId: number, amount: number): Promise<Bid> {
+    const pool = getPool();
+    const result = await pool.query(
+      'INSERT INTO bids (auction_id, user_id, amount) VALUES ($1, $2, $3) RETURNING *',
+      [auctionId, userId, amount]
+    );
+    return result.rows[0] as Bid;
+  },
 
-    return db.prepare('SELECT * FROM bids WHERE id = ?')
-      .get(Number(result.lastInsertRowid)) as Bid;
+  async getBidsByUser(userId: number, limit = 50): Promise<UserBidWithAuction[]> {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT b.*, a.name as auction_name, a.status as auction_status
+       FROM bids b
+       JOIN auctions a ON b.auction_id = a.id
+       WHERE b.user_id = $1
+       ORDER BY b.created_at DESC
+       LIMIT $2`,
+      [userId, limit]
+    );
+    return result.rows as UserBidWithAuction[];
   },
 };

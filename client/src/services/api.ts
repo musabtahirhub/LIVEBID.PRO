@@ -1,6 +1,7 @@
 import type {
   AuthResponse,
   AuctionFeedResponse,
+  HistoryResponse,
   SimulationRequest,
   SimulationResponse,
   StrategyResponse,
@@ -155,6 +156,13 @@ export const api = {
       return request(`/auctions/${auctionId}/close`, {
         method: 'PATCH',
       });
+    },
+  },
+
+  // ─── History ─────────────────────────────────────────────────
+  history: {
+    async getAll(): Promise<HistoryResponse> {
+      return request('/history');
     },
   },
 

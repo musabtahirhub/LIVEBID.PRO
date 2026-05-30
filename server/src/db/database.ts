@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -6,32 +6,53 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let db: Database.Database;
+const { Pool } = pg;
 
-export function getDb(): Database.Database {
-  if (!db) {
-    const dbPath = process.env.DATABASE_PATH || './data/livebid.db';
-    const dbDir = path.dirname(dbPath);
+let pool: pg.Pool;
 
-    // Ensure the data directory exists
-    if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true });
+export function getPool(): pg.Pool {
+  if (!pool) {
+    const connectionString = process.env.DATABASE_URL;
+
+    if (!connectionString) {
+      throw new Error('DATABASE_URL environment variable is required');
     }
 
-    db = new Database(dbPath);
+    pool = new Pool({
+      connectionString,
+      ssl: process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : undefined,
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    });
 
-    // Enable WAL mode for better concurrent read performance
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-
-    // Run migrations
-    runMigrations(db);
+    pool.on('error', (err) => {
+      console.error('[DB] Unexpected pool error:', err);
+    });
   }
 
-  return db;
+  return pool;
 }
 
-function runMigrations(database: Database.Database): void {
+export async function initDb(): Promise<void> {
+  const p = getPool();
+
+  // Test connection
+  try {
+    const result = await p.query('SELECT NOW()');
+    console.log(`[DB] Connected to PostgreSQL at ${result.rows[0].now}`);
+  } catch (err) {
+    console.error('[DB] Failed to connect:', err);
+    throw err;
+  }
+
+  // Run migrations
+  await runMigrations(p);
+}
+
+async function runMigrations(p: pg.Pool): Promise<void> {
   const migrationsDir = path.join(__dirname, 'migrations');
 
   if (!fs.existsSync(migrationsDir)) {
@@ -46,15 +67,15 @@ function runMigrations(database: Database.Database): void {
   for (const file of migrationFiles) {
     const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
     console.log(`[DB] Running migration: ${file}`);
-    database.exec(sql);
+    await p.query(sql);
   }
 
   console.log(`[DB] ${migrationFiles.length} migration(s) applied`);
 }
 
-export function closeDb(): void {
-  if (db) {
-    db.close();
-    console.log('[DB] Connection closed');
+export async function closeDb(): Promise<void> {
+  if (pool) {
+    await pool.end();
+    console.log('[DB] Connection pool closed');
   }
 }

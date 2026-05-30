@@ -25,7 +25,7 @@ export default defineConfig({
         chunkSizeWarningLimit: 1600,
         rollupOptions: {
             output: {
-                manualChunks: function (id) {
+                manualChunks(id) {
                     if (id.includes('node_modules')) {
                         if (id.includes('recharts') || id.includes('d3'))
                             return 'charts';

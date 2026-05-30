@@ -1,4 +1,4 @@
-import { getDb } from '../database.js';
+import { getPool } from '../database.js';
 
 export interface User {
   id: number;
@@ -17,28 +17,31 @@ export interface UserPublic {
 }
 
 export const UserModel = {
-  findByEmail(email: string): User | undefined {
-    const db = getDb();
-    return db.prepare('SELECT * FROM users WHERE email = ?').get(email) as User | undefined;
+  async findByEmail(email: string): Promise<User | undefined> {
+    const pool = getPool();
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    return result.rows[0] as User | undefined;
   },
 
-  findByUsername(username: string): User | undefined {
-    const db = getDb();
-    return db.prepare('SELECT * FROM users WHERE username = ?').get(username) as User | undefined;
+  async findByUsername(username: string): Promise<User | undefined> {
+    const pool = getPool();
+    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+    return result.rows[0] as User | undefined;
   },
 
-  findById(id: number): User | undefined {
-    const db = getDb();
-    return db.prepare('SELECT * FROM users WHERE id = ?').get(id) as User | undefined;
+  async findById(id: number): Promise<User | undefined> {
+    const pool = getPool();
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    return result.rows[0] as User | undefined;
   },
 
-  create(email: string, username: string, passwordHash: string): User {
-    const db = getDb();
-    const result = db.prepare(
-      'INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)'
-    ).run(email, username, passwordHash);
-
-    return this.findById(Number(result.lastInsertRowid))!;
+  async create(email: string, username: string, passwordHash: string): Promise<User> {
+    const pool = getPool();
+    const result = await pool.query(
+      'INSERT INTO users (email, username, password_hash) VALUES ($1, $2, $3) RETURNING *',
+      [email, username, passwordHash]
+    );
+    return result.rows[0] as User;
   },
 
   toPublic(user: User): UserPublic {

@@ -6,7 +6,7 @@ import { createServer } from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { getDb, closeDb } from './db/database.js';
+import { initDb, closeDb } from './db/database.js';
 import { initWebSocket, getConnectedCount } from './services/wsService.js';
 import { generalLimiter } from './middleware/rateLimit.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -16,6 +16,7 @@ import authRoutes from './routes/auth.js';
 import auctionRoutes from './routes/auctions.js';
 import simulationRoutes from './routes/simulation.js';
 import aiRoutes from './routes/ai.js';
+import historyRoutes from './routes/history.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,6 +41,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/auctions', auctionRoutes);
 app.use('/api/simulate', simulationRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/history', historyRoutes);
 
 // ─── Health Check ───────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
@@ -64,35 +66,45 @@ if (process.env.NODE_ENV === 'production') {
 // ─── Error Handler (must be last) ───────────────────────────────
 app.use(errorHandler);
 
-// ─── Initialize Database ────────────────────────────────────────
-getDb();
+// ─── Initialize Database & Start Server ─────────────────────────
+async function start() {
+  try {
+    await initDb();
+  } catch (err) {
+    console.error('[SERVER] Failed to initialize database:', err);
+    process.exit(1);
+  }
 
-// ─── Initialize WebSocket ───────────────────────────────────────
-initWebSocket(server);
+  // ─── Initialize WebSocket ───────────────────────────────────
+  initWebSocket(server);
 
-// ─── Start Server ───────────────────────────────────────────────
-server.listen(PORT, () => {
-  console.log('');
-  console.log('  ⚡ LiveBid.Pro Server v2.0.0');
-  console.log(`  📡 HTTP:  http://localhost:${PORT}`);
-  console.log(`  🔌 WS:    ws://localhost:${PORT}/ws`);
-  console.log(`  📊 Health: http://localhost:${PORT}/api/health`);
-  console.log(`  🌍 Env:   ${process.env.NODE_ENV || 'development'}`);
-  console.log('');
-});
+  // ─── Start Server ──────────────────────────────────────────
+  server.listen(PORT, () => {
+    console.log('');
+    console.log('  ⚡ LiveBid.Pro Server v2.0.0');
+    console.log(`  📡 HTTP:  http://localhost:${PORT}`);
+    console.log(`  🔌 WS:    ws://localhost:${PORT}/ws`);
+    console.log(`  📊 Health: http://localhost:${PORT}/api/health`);
+    console.log(`  🌍 Env:   ${process.env.NODE_ENV || 'development'}`);
+    console.log(`  🗄️  DB:    PostgreSQL (connected)`);
+    console.log('');
+  });
+}
+
+start();
 
 // ─── Graceful Shutdown ──────────────────────────────────────────
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('\n[SERVER] Shutting down gracefully...');
-  closeDb();
+  await closeDb();
   server.close(() => {
     console.log('[SERVER] Closed');
     process.exit(0);
   });
 });
 
-process.on('SIGTERM', () => {
-  closeDb();
+process.on('SIGTERM', async () => {
+  await closeDb();
   server.close(() => process.exit(0));
 });
 

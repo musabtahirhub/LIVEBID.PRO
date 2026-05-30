@@ -80,4 +80,56 @@ export interface AuctionFeedResponse {
   sources: any[];
 }
 
-export type Tab = 'WAR_ROOM' | 'GLOBAL_FEED' | 'AGENT_INTEL' | 'THEORY_LAB';
+// ─── History Types ─────────────────────────────────────────────
+
+export interface SimulationHistoryItem {
+  id: number;
+  auction_name: string;
+  market_value: number;
+  personal_value: number;
+  competition: number;
+  iterations: number;
+  win_rate: number;
+  avg_win_price: number;
+  max_competitor_bid: number | null;
+  recommendation: string;
+  created_at: string;
+}
+
+export interface UserBidItem {
+  id: number;
+  auction_id: number;
+  amount: number;
+  auction_name: string;
+  auction_status: string;
+  created_at: string;
+}
+
+export interface UserAuctionItem {
+  id: number;
+  name: string;
+  description: string | null;
+  market_value: number;
+  auction_type: string;
+  status: string;
+  house: string | null;
+  created_at: string;
+  closed_at: string | null;
+}
+
+export interface HistoryStats {
+  totalSimulations: number;
+  avgWinRate: number;
+  bestWinRate: number;
+  totalBids: number;
+  totalAuctions: number;
+}
+
+export interface HistoryResponse {
+  simulations: SimulationHistoryItem[];
+  bids: UserBidItem[];
+  auctions: UserAuctionItem[];
+  stats: HistoryStats;
+}
+
+export type Tab = 'WAR_ROOM' | 'GLOBAL_FEED' | 'AGENT_INTEL' | 'THEORY_LAB' | 'HISTORY';

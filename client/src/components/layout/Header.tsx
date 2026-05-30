@@ -101,6 +101,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
         <NavButton active={activeTab === 'GLOBAL_FEED'} onClick={() => onTabChange('GLOBAL_FEED')} label="Global Feed" tabId="GLOBAL_FEED" />
         <NavButton active={activeTab === 'AGENT_INTEL'} onClick={() => onTabChange('AGENT_INTEL')} label="Agent Intel" tabId="AGENT_INTEL" />
         <NavButton active={activeTab === 'THEORY_LAB'} onClick={() => onTabChange('THEORY_LAB')} label="Theory Lab" tabId="THEORY_LAB" />
+        <NavButton active={activeTab === 'HISTORY'} onClick={() => onTabChange('HISTORY')} label="History" tabId="HISTORY" />
       </nav>
     </header>
   );
