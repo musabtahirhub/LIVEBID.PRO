@@ -2,8 +2,8 @@
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://livebid-pro.onrender.com/api/$1"
+      "source": "/api/:path*",
+      "destination": "https://livebid-pro.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",
